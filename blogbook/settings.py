@@ -6,6 +6,7 @@ TEMPLATE_DIR = BASE_DIR / "templates"
 MEDIA_DIR = BASE_DIR / "media"
 STATIC_DIR = BASE_DIR / "static"
 STATIC_URL = "/static/"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 STATICFILES_DIRS = [
     STATIC_DIR,
 ]
