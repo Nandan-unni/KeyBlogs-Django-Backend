@@ -33,7 +33,7 @@ class SignUpView(views.APIView):
                 {
                     "email_subject": "Confirm your email",
                     "email_file": "mails/confirm_mail.html",
-                    "email_data": {"link": link},
+                    "email_data": {"token_link": link},
                 },
                 user,
                 "Email auth",

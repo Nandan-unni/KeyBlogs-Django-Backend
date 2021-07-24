@@ -7,10 +7,11 @@ from rest_framework import status
 
 
 def send_email(data, user, type):
-    data["user"] = user.name
+    data["email_data"]["user_name"] = user.name
+    data["email_data"]["user_email"] = user.email
     email = EmailMessage(
-        subject=data["email_subject"],
-        body=render_to_string(data["email_file"], data["email_data"]),
+        data["email_subject"],
+        render_to_string(data["email_file"], data["email_data"]),
         from_email="BlogBook",
         to=[user.email],
     )
