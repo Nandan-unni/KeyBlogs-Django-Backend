@@ -1,19 +1,19 @@
 from rest_framework import views, status
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.contrib.auth import get_user_model, authenticate, login, logout
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_bytes
-from django.core.mail import EmailMessage
 from django.shortcuts import redirect
 from django.conf import settings
-
-import smtplib
+from django.urls import reverse
 
 from writers.serializers import WriterSerializer, SignupSerializer
-from writers.token import email_auth_token
 from writers.views import message
+
+from auth.token import email_auth_token
+from auth.utils import send_email
 
 
 class SignUpView(views.APIView):
@@ -26,27 +26,24 @@ class SignUpView(views.APIView):
             user.save()
             message(f"{user.name} ({user.pk}) created an account.")
 
-            ##### Sending Email verification mail #####
-            uid = urlsafe_base64_encode(force_bytes(user.id))
-            token = email_auth_token.make_token(user)
-            link = f"{settings.API_URL}/auth/verifyemail/{uid}/{token}/"
-            print(link)
-            email_subject = "Confirm your account"
-            mail = render_to_string("activateMail.html", {"link": link, "user": user})
-            to_email = user.email
-            email = EmailMessage(
-                email_subject, mail, from_email="Key Blogs", to=[to_email]
+            # START: send email auth mail
+            token = RefreshToken.for_user(user).access_token
+            link = f"""{settings.API_URL}{reverse("verify_email")}?token={token}"""
+            status_code = send_email(
+                {
+                    "email_subject": "Confirm your email",
+                    "email_file": "mails/confirm_mail.html",
+                    "email_data": {"link": link},
+                },
+                user,
+                "Email auth",
             )
-            email.content_subtype = "html"
-            try:
-                email.send()
-                message(f"Auth Email send to {user.name} ({user.pk})")
-            except smtplib.SMTPAuthenticationError:
+            if not status_code == 201:
                 user.is_active = True
                 user.save()
-                message(f"Auth Email sending failed for {user.name} ({user.pk})")
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(status=status.HTTP_201_CREATED)
+            return Response(status=status_code)
+            # END: send email auth mail
+
         message(serializer.errors)
         return Response(
             data=serializer.errors, status=status.HTTP_203_NON_AUTHORITATIVE_INFORMATION
@@ -59,7 +56,6 @@ class SignInView(views.APIView):
         user = authenticate(
             username=data.get("email", None), password=data.get("password", None)
         )
-        print(data)
         if user is not None:
             login(request, user)
             message(f"{user.name} ({user.pk}) logged in.")

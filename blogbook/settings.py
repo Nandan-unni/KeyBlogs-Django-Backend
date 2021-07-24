@@ -1,8 +1,11 @@
+import os
 from pathlib import Path
 from datetime import timedelta
 import dj_database_url
+from dotenv import load_dotenv
+load_dotenv()
 
-ENV = "PROD"
+ENV = "DEV"
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = BASE_DIR / "templates"
@@ -10,14 +13,14 @@ MEDIA_DIR = BASE_DIR / "media"
 STATIC_URL = "/static/"
 
 if ENV == "DEV":
-    API_URL = "http://localhost:8000/api"
+    API_URL = "http://localhost:8000"
     CLIENT_URL = "http://localhost:3000"
     STATIC_DIR = BASE_DIR / "static"
     STATICFILES_DIRS = [STATIC_DIR]
     DEBUG = True
 
 if ENV == "PROD":
-    API_URL = "https://blogbookapi.herokuapp.com/api"
+    API_URL = "https://blogbookapi.herokuapp.com"
     CLIENT_URL = "https://blogbook.web.app"
     STATIC_ROOT = BASE_DIR / "static"
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -73,11 +76,13 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
 ]
 
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_HOST_USER = "argon.intelligence@gmail.com"
-EMAIL_HOST_PASSWORD = "1806@two000"
-EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+# EMAIL_HOST_USER = "argon.intelligence@gmail.com"
+# EMAIL_HOST_PASSWORD = "1806@two000"
 
 ROOT_URLCONF = "blogbook.urls"
 
