@@ -15,6 +15,8 @@ from writers.views import message
 from auth.token import email_auth_token
 from auth.utils import send_email
 
+import jwt
+
 
 class SignUpView(views.APIView):
     def post(self, request, *args, **kwargs):
@@ -38,9 +40,6 @@ class SignUpView(views.APIView):
                 user,
                 "Email auth",
             )
-            if not status_code == 201:
-                user.is_active = True
-                user.save()
             return Response(status=status_code)
             # END: send email auth mail
 
@@ -57,10 +56,17 @@ class SignInView(views.APIView):
             username=data.get("email", None), password=data.get("password", None)
         )
         if user is not None:
-            login(request, user)
-            message(f"{user.name} ({user.pk}) logged in.")
-            serializer = WriterSerializer(user)
-            return Response(status=status.HTTP_200_OK, data=serializer.data)
+            if user.is_email_verified:
+                login(request, user)
+                message(f"{user.name} ({user.pk}) logged in.")
+                serializer = WriterSerializer(user)
+                return Response(status=status.HTTP_200_OK, data=serializer.data)
+            return Response(
+                status=status.HTTP_203_NON_AUTHORITATIVE_INFORMATION,
+                data={
+                    "msg": "A verification mail is send to your email address. Please verify your email address to Login."
+                },
+            )
         message("User not found.")
         return Response(status=status.HTTP_203_NON_AUTHORITATIVE_INFORMATION)
 
@@ -75,14 +81,14 @@ class SignOutView(views.APIView):
 
 class VerifyEmailView(views.APIView):
     def get(self, request, *args, **kwargs):
+        token = request.GET.get("token")
         try:
-            uid = force_bytes(urlsafe_base64_decode(kwargs["uidb64"]))
-            print(int.from_bytes(urlsafe_base64_decode(kwargs["uidb64"])))
-            user = get_user_model().objects.get(pk=uid)
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+            user = get_user_model().objects.get(pk=payload["user_pk"])
         except (TypeError, ValueError, OverflowError, get_user_model().DoesNotExist):
             user = None
-        if user is not None and email_auth_token.check_token(user, kwargs["token"]):
-            user.is_active = True
+        if user is not None:
+            user.is_email_verified = True
             message(f"{user.name} ({user.pk}) activated their account.")
             user.save()
             link = f"{settings.CLIENT_URL}/emailverify/success/{user.pk}/"

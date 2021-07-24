@@ -3,9 +3,10 @@ from pathlib import Path
 from datetime import timedelta
 import dj_database_url
 from dotenv import load_dotenv
+
 load_dotenv()
 
-ENV = "DEV"
+ENV = "PROD"
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = BASE_DIR / "templates"
@@ -28,7 +29,7 @@ if ENV == "PROD":
 
 AUTH_USER_MODEL = "writers.Writer"
 
-SECRET_KEY = "django-insecure-q0-mimlxlphjz5*p+t7396%xp&&hh3wsfzp69(b0ugacg-*jx5"
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 
 CORS_ORIGIN_ALLOW_ALL = False
@@ -49,20 +50,20 @@ INSTALLED_APPS = [
     "blogs",
 ]
 
-# REST_FRAMEWORK = {
-#     "DEFAULT_AUTHENTICATION_CLASSES": (
-#         "rest_framework_simplejwt.authentication.JWTAuthentication",
-#     )
-# }
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    )
+}
 
-# SIMPLE_JWT = {
-#     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
-#     "REFRESH_TOKEN_LIFETIME": timedelta(days=15),
-#     "ROTATE_REFRESH_TOKENS": True,
-#     "BLACKLIST_AFTER_ROTATION": True,
-#     "USER_ID_FIELD": "pk",
-#     "USER_ID_CLAIM": "user_pk",
-# }
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=5),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "USER_ID_FIELD": "pk",
+    "USER_ID_CLAIM": "user_pk",
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -81,8 +82,6 @@ EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
-# EMAIL_HOST_USER = "argon.intelligence@gmail.com"
-# EMAIL_HOST_PASSWORD = "1806@two000"
 
 ROOT_URLCONF = "blogbook.urls"
 
