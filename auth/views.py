@@ -85,14 +85,14 @@ class VerifyEmailView(views.APIView):
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
             user = get_user_model().objects.get(pk=payload["user_pk"])
-        except (TypeError, ValueError, OverflowError, get_user_model().DoesNotExist):
+        except (jwt.exceptions.InvalidSignatureError, get_user_model().DoesNotExist):
             user = None
         if user is not None:
             user.is_email_verified = True
             message(f"{user.name} ({user.pk}) activated their account.")
             user.save()
-            link = f"{settings.CLIENT_URL}/emailverify/success/{user.pk}/"
+            link = f"{settings.CLIENT_URL}/emailconfirmation/success/{user.pk}/"
             return redirect(link)
         message("Invalid email verification link recieved.")
-        link = f"{settings.CLIENT_URL}/emailverify/error/"
+        link = f"{settings.CLIENT_URL}/emailconfirmation/failure/"
         return redirect(link)
